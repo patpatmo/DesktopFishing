@@ -1,0 +1,88 @@
+﻿<Window x:Class="TransparentOverlay.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:gif="http://wpfanimatedgif.codeplex.com"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="透明覆盖窗口" 
+        WindowStyle="None" 
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        Height="{Binding SystemParameters.PrimaryScreenHeight}"
+        Width="{Binding SystemParameters.PrimaryScreenWidth}"
+        Left="0"
+        Top="0">
+
+    <Canvas x:Name="MainCanvas"
+            Background="Transparent"
+            Visibility="Visible">
+
+        <!-- 自适应宽度的GIF图片，固定在底部 -->
+        <Image gif:ImageBehavior.AnimatedSource="Assets/animation.gif" 
+               gif:ImageBehavior.AutoStart="True" 
+               x:Name="Water"
+               Canvas.Bottom="0"
+               Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Canvas}}"
+               Height="80"
+               Stretch="Fill"
+               Panel.ZIndex="2"/>
+
+        <Image x:Name="FishingRodImage"
+               Source="Assets/fishingrod.png"
+               Width="308"
+               Height="190"
+               Visibility="Visible"
+               IsHitTestVisible="False"
+               Panel.ZIndex="1"/>
+        <!--鱼线UI-->
+        <Path x:Name="FishingLine" Stroke="SaddleBrown" StrokeThickness="3" Panel.ZIndex="0">
+            <Path.Data>
+                <PathGeometry>
+                    <PathFigure x:Name="LineStart">
+                        <QuadraticBezierSegment x:Name="LineCurve"/>
+                    </PathFigure>
+                </PathGeometry>
+            </Path.Data>
+        </Path>
+
+        <!-- 鱼线末端标记 鱼钩 -->
+        <Image x:Name="LineEnd" Width="50" Height="50" Source="Assets/fish_hook.png" Panel.ZIndex="0"/>
+        <Image x:Name="FishImage"
+                Source="Assets/Fishs/fish1.png"
+                Width="60"
+                Height="60"
+                Visibility="Collapsed"
+                RenderTransformOrigin="0.5,0.5">
+            <Image.RenderTransform>
+                <RotateTransform x:Name="FishRotateTransform" Angle="90" />
+            </Image.RenderTransform>
+        </Image>
+        <!-- 水花GIF -->
+        <Image x:Name="waterSplash" 
+               gif:ImageBehavior.AnimatedSource="Assets/water_splash.gif" 
+               gif:ImageBehavior.AutoStart="True"
+               Width="200" Height="130" 
+               Visibility="Collapsed"
+               Panel.ZIndex="0"/>
+        <Grid x:Name="TipsGrid"  Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <!-- 第一列占一半空间 -->
+                <ColumnDefinition Width="*"/>
+                <!-- 第二列占一半空间 -->
+            </Grid.ColumnDefinitions>
+            <!-- 提示图片-->
+            <Image x:Name="TipsImage"
+               Source="Assets/PlusReal.png"
+               Width="25"
+               Height="25"
+               Grid.Column="0"/>
+            <!-- 提示图片-->
+            <Image x:Name="FishImgTips"
+               Source="Assets/Fishs/fish1.png"
+               Width="45"
+               Height="45"  
+               Grid.Column="1"/>
+        </Grid>
+        
+    </Canvas>
+</Window>

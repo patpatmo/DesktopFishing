@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "daxwotdG29bifIPahM0B+O6SquPormeo1WunSGSL8MoTRbTOdTpt+rr7BRnM90MFZx4psnjz490OfWVWsPB0LQ==",
+  "success": true,
+  "projectFilePath": "D:\\Pratice\\C++\\FishingGame\\FishingGame.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\patpa\\.nuget\\packages\\wpfanimatedgif\\2.0.2\\wpfanimatedgif.2.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}
