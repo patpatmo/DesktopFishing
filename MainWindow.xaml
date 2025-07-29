@@ -47,14 +47,31 @@
         <!-- 鱼线末端标记 鱼钩 -->
         <Image x:Name="LineEnd" Width="50" Height="50" Source="Assets/fish_hook.png" Panel.ZIndex="0"/>
         <Image x:Name="FishImage"
-                Source="Assets/Fishs/fish1.png"
-                Width="60"
-                Height="60"
-                Visibility="Collapsed"
-                RenderTransformOrigin="0.5,0.5">
+            Source="Assets/Fishs/fish1.png"
+            Width="85"
+            Height="85"
+            Visibility="Visible"
+            RenderTransformOrigin="0,0.5">
             <Image.RenderTransform>
-                <RotateTransform x:Name="FishRotateTransform" Angle="90" />
+                <RotateTransform x:Name="FishRotate" Angle="90"/>
             </Image.RenderTransform>
+            <Image.Triggers>
+                <EventTrigger RoutedEvent="Image.Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <!-- 简单左右摇摆动画 -->
+                            <DoubleAnimation
+                        Storyboard.TargetName="FishRotate"
+                        Storyboard.TargetProperty="Angle"
+                        From="75"
+                        To="105"
+                        Duration="0:0:0.2"
+                        AutoReverse="True"
+                        RepeatBehavior="Forever"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Image.Triggers>
         </Image>
         <!-- 水花GIF -->
         <Image x:Name="waterSplash" 
@@ -73,14 +90,14 @@
             <!-- 提示图片-->
             <Image x:Name="TipsImage"
                Source="Assets/PlusReal.png"
-               Width="25"
-               Height="25"
+               Width="30"
+               Height="30"
                Grid.Column="0"/>
             <!-- 提示图片-->
             <Image x:Name="FishImgTips"
                Source="Assets/Fishs/fish1.png"
-               Width="45"
-               Height="45"  
+               Width="60"
+               Height="60"  
                Grid.Column="1"/>
         </Grid>
         

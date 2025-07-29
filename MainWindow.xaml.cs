@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using WpfAnimatedGif;
+using RandomFish;
 
 namespace TransparentOverlay
 {
@@ -86,9 +87,11 @@ namespace TransparentOverlay
         private DateTime _prevMouseTime = DateTime.Now;
         private double _verticalSpeed;
         private DateTime _lastPullTime = DateTime.MinValue; // 防止多次触发
+        private FishGenerator fishGenerator;
 
         // 钓鱼 鱼显示相关
-
+        private bool _isHideFishTimerCalled = false; // 类级别变量
+        private bool _isFishRamdomed = false;
         // 性能优化相关
         private DispatcherTimer _fishingTimer;
         private DispatcherTimer _collisionTimer;
@@ -117,6 +120,7 @@ namespace TransparentOverlay
             CompositionTarget.Rendering += UpdateFishingLine;
             _cancellationTokenSource = new CancellationTokenSource();
             StartFishingLogic();
+            fishGenerator= new FishGenerator();
         }
 
         /// <summary>
@@ -376,11 +380,11 @@ namespace TransparentOverlay
                 // 检测是否显示鱼
                 IsFishCanShow();
                 // 将鱼图像放置在鱼钩位置
-                Canvas.SetLeft(FishImage, _lineEndPosition.X - FishImage.Width / 2);
+                Canvas.SetLeft(FishImage, _lineEndPosition.X - FishImage.Width / -100);
                 Canvas.SetTop(FishImage, _lineEndPosition.Y - FishImage.Height / 2);
 
-                Canvas.SetLeft(TipsGrid, _lineEndPosition.X - FishImage.Width / 2-200);
-                Canvas.SetTop(TipsGrid, _lineEndPosition.Y - FishImage.Height / 2-100);
+                Canvas.SetLeft(TipsGrid, _lineEndPosition.X - FishImage.Width / 2-100);
+                Canvas.SetTop(TipsGrid, _lineEndPosition.Y - FishImage.Height / 2);
 
             }
             catch (Exception ex)
@@ -718,12 +722,18 @@ namespace TransparentOverlay
                 Debug.WriteLine($"显示水花异常: {ex.Message}");
             }
         }
-        private bool _isHideFishTimerCalled = false; // 类级别变量
 
         private void IsFishCanShow()
         {
             if (isFishGet)
             {
+                string fishImg;
+                if(!_isFishRamdomed)
+                {
+                    _isFishRamdomed = true;
+                    fishImg=fishGenerator.GenerateRandomItemWithImage();
+                    Debug.WriteLine(fishImg);
+                }
                 FishImage.Visibility = Visibility.Visible;
                 //double fishAngle = Math.Sin(_hookSwingAngle * 2) * 15;
                 //FishRotateTransform.Angle = fishAngle;
@@ -739,12 +749,12 @@ namespace TransparentOverlay
             {
                 FishImage.Visibility = Visibility.Collapsed;
                 //FishRotateTransform.Angle = 0;
+                _isFishRamdomed = false;
                 _isHideFishTimerCalled = false; // 重置状态，允许下次调用
             }
         }
         private async void HideFishTimer()
         {
-            
             await Task.Delay(3000).ConfigureAwait(true); // 确保回到 UI 线程
             isFishGet = false;
             FishImage.Visibility = Visibility.Collapsed;
