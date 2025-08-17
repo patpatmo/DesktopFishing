@@ -13,6 +13,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using WpfAnimatedGif;
 using RandomFish;
+using System.Windows.Media.Imaging;
 
 namespace TransparentOverlay
 {
@@ -121,6 +122,7 @@ namespace TransparentOverlay
             _cancellationTokenSource = new CancellationTokenSource();
             StartFishingLogic();
             fishGenerator= new FishGenerator();
+            FishGenerator.SetFolderIcon();
         }
 
         /// <summary>
@@ -380,8 +382,11 @@ namespace TransparentOverlay
                 // 检测是否显示鱼
                 IsFishCanShow();
                 // 将鱼图像放置在鱼钩位置
-                Canvas.SetLeft(FishImage, _lineEndPosition.X - FishImage.Width / -100);
+                Canvas.SetLeft(FishImage, _lineEndPosition.X - FishImage.Width / 2 +44);
                 Canvas.SetTop(FishImage, _lineEndPosition.Y - FishImage.Height / 2);
+
+                Canvas.SetLeft(RareFishImage, _lineEndPosition.X - RareFishImage.Width / 2 +83);
+                Canvas.SetTop(RareFishImage, _lineEndPosition.Y - RareFishImage.Height / 2 -15);
 
                 Canvas.SetLeft(TipsGrid, _lineEndPosition.X - FishImage.Width / 2-100);
                 Canvas.SetTop(TipsGrid, _lineEndPosition.Y - FishImage.Height / 2);
@@ -727,16 +732,44 @@ namespace TransparentOverlay
         {
             if (isFishGet)
             {
-                string fishImg;
+                FishInfo fishInfo;
                 if(!_isFishRamdomed)
                 {
                     _isFishRamdomed = true;
-                    fishImg=fishGenerator.GenerateRandomItemWithImage();
-                    Debug.WriteLine(fishImg);
+                    fishInfo=fishGenerator.GenerateRandomItemWithImage();//随机选取钓上的鱼的图片
+                    // 根据ItemType执行不同方法
+                    switch (fishInfo.type)
+                    {
+                        case ItemType.Fish:
+                            //普通鱼
+                            FishImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
+                            FishImage.Visibility = Visibility.Visible;
+                            break;
+                        case ItemType.RareFish:
+                            //珍稀鱼
+                            RareFishImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
+                            RareFishImage.Visibility = Visibility.Visible;
+                            Debug.WriteLine("是条大鱼");
+                            break;
+                        case ItemType.Garbage:
+                            FishImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
+                            FishImage.Visibility = Visibility.Visible;
+                            break;
+                        case ItemType.Collectible:
+                            FishImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
+                            FishImage.Visibility = Visibility.Visible;
+                            break;
+                        default:
+                            //待定
+                            break;
+                    }
+                    FishBucketManager.AddFishToBucket(fishInfo.imgPath);
+                    Debug.WriteLine(fishInfo);
                 }
-                FishImage.Visibility = Visibility.Visible;
-                //double fishAngle = Math.Sin(_hookSwingAngle * 2) * 15;
-                //FishRotateTransform.Angle = fishAngle;
 
                 // 只在第一次进入时调用
                 if (!_isHideFishTimerCalled)
@@ -748,6 +781,7 @@ namespace TransparentOverlay
             else
             {
                 FishImage.Visibility = Visibility.Collapsed;
+                RareFishImage.Visibility = Visibility.Collapsed;
                 //FishRotateTransform.Angle = 0;
                 _isFishRamdomed = false;
                 _isHideFishTimerCalled = false; // 重置状态，允许下次调用
