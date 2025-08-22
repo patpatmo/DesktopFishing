@@ -73,6 +73,8 @@
                 </EventTrigger>
             </Image.Triggers>
         </Image>
+
+        <!-- 稀有鱼图片 -->
         <Image x:Name="RareFishImage"
             Source="Assets/RareFish/fish1.png"
             Stretch="Fill"
@@ -101,6 +103,19 @@
                 </EventTrigger>
             </Image.Triggers>
         </Image>
+        
+        <!-- 垃圾和收藏品 -->
+        <Image x:Name="CollectionAndGarbageImage"
+            Source="Assets/Fish/fish1.png"
+            Width="85"
+            Height="85"
+            Visibility="Visible"
+            RenderTransformOrigin="0,0.5">
+            <Image.RenderTransform>
+                <RotateTransform x:Name="FishRotate" Angle="90"/>
+            </Image.RenderTransform>
+        </Image>
+
         <!-- 水花GIF -->
         <Image x:Name="waterSplash" 
                gif:ImageBehavior.AnimatedSource="Assets/water_splash.gif" 

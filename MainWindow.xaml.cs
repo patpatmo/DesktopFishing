@@ -754,14 +754,14 @@ namespace TransparentOverlay
                             Debug.WriteLine("是条大鱼");
                             break;
                         case ItemType.Garbage:
-                            FishImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            CollectionAndGarbageImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
                             FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
-                            FishImage.Visibility = Visibility.Visible;
+                            CollectionAndGarbageImage.Visibility = Visibility.Visible;
                             break;
                         case ItemType.Collectible:
-                            FishImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            CollectionAndGarbageImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
                             FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
-                            FishImage.Visibility = Visibility.Visible;
+                            CollectionAndGarbageImage.Visibility = Visibility.Visible;
                             break;
                         default:
                             //待定
