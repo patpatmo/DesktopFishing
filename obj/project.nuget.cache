@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "daxwotdG29bifIPahM0B+O6SquPormeo1WunSGSL8MoTRbTOdTpt+rr7BRnM90MFZx4psnjz490OfWVWsPB0LQ==",
+  "dgSpecHash": "+OdqXxhrPgHKSMwLL2HiSGlmgU4SYorG6DnQFHMZiVcPTTb5USIBsUmcSNGj+YWb0SiZBqHiRjczQJF2PPiy3g==",
   "success": true,
-  "projectFilePath": "D:\\Pratice\\C++\\FishingGame\\FishingGame.csproj",
+  "projectFilePath": "C:\\Users\\13929.小霸王\\Downloads\\FishingGame (1)\\DesktopFishing\\FishingGame.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\patpa\\.nuget\\packages\\wpfanimatedgif\\2.0.2\\wpfanimatedgif.2.0.2.nupkg.sha512"
+    "C:\\Users\\13929.小霸王\\.nuget\\packages\\wpfanimatedgif\\2.0.2\\wpfanimatedgif.2.0.2.nupkg.sha512"
   ],
   "logs": []
 }

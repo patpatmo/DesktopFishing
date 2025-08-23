@@ -95,6 +95,10 @@ namespace TransparentOverlay
         private CancellationTokenSource _cancellationTokenSource;
         private readonly object _lockObject = new object();
 
+
+        // 观光模式
+        private bool isViewMode = false;
+
         // 缓存变量以减少重复计算
         private DateTime _lastMouseMove = DateTime.MinValue;
 
@@ -200,6 +204,9 @@ namespace TransparentOverlay
                     var hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
                     var mousePos = new Point(hookStruct.pt.x, hookStruct.pt.y);
 
+                    // 如果处于观光模式，跳过鱼竿位置更新
+                    if (isViewMode) return CallNextHookEx(_mouseHookID, nCode, wParam, lParam);
+
                     // ==== 新增：判断鼠标向上甩动速度 ====
                     double deltaTime = (now - _prevMouseTime).TotalSeconds;
                     if (deltaTime > 0.001)
@@ -290,6 +297,40 @@ namespace TransparentOverlay
                                 }
                             }), DispatcherPriority.Background);
                         }
+                        else if (key == Key.F2)
+                        {
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                try
+                                {
+                                    // F2键切换观光模式
+                                    isViewMode = !isViewMode;
+
+                                    if (isViewMode)
+                                    {
+                                        // 进入观光模式
+                                        MainCanvas.Visibility = Visibility.Visible;
+                                        FishingRodImage.Visibility = Visibility.Collapsed;
+                                        FishingLine.Visibility = Visibility.Collapsed;
+                                        LineEnd.Visibility = Visibility.Collapsed;
+                                        DisableClickThrough();
+                                    }
+                                    else
+                                    {
+                                        // 退出观光模式
+                                        MainCanvas.Visibility = Visibility.Visible;
+                                        FishingRodImage.Visibility = Visibility.Visible;
+                                        FishingLine.Visibility = Visibility.Visible;
+                                        LineEnd.Visibility = Visibility.Visible;
+                                        DisableClickThrough();
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"F2键处理错误: {ex.Message}");
+                                }
+                            }), DispatcherPriority.Background);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -297,7 +338,6 @@ namespace TransparentOverlay
                     Debug.WriteLine($"键盘钩子回调错误: {ex.Message}");
                 }
             }
-
             return CallNextHookEx(_keyboardHookID, nCode, wParam, lParam);
         }
 
@@ -328,6 +368,9 @@ namespace TransparentOverlay
         {
             try
             {
+                // 如果处于观光模式，跳过鱼线更新
+                if (isViewMode) return;
+                
                 // 始终获取鱼竿的实际位置，确保鱼线起点正确
                 Point rodPos = FishingRodImage.TransformToVisual(MainCanvas)
                                              .Transform(new Point(20, 28));
@@ -396,6 +439,17 @@ namespace TransparentOverlay
         {
             try
             {
+                // 如果处于观光模式，隐藏LineEnd并跳过更新
+                if (isViewMode)
+                {
+                    LineEnd.Visibility = Visibility.Collapsed;
+                    return;
+                }
+                else
+                {
+                    LineEnd.Visibility = Visibility.Visible;
+                }
+
                 Canvas.SetLeft(LineEnd, _lineEndPosition.X - LineEnd.Width / 2 - 1);
                 Canvas.SetTop(LineEnd, _lineEndPosition.Y - LineEnd.Height / 2 + 9);
 
@@ -421,6 +475,9 @@ namespace TransparentOverlay
         {
             try
             {
+                // 如果处于观光模式，跳过碰撞检测
+                if (isViewMode) return;
+                
                 lock (_lockObject)
                 {
                     bool wasInWater = isReadytoFishing;
@@ -470,6 +527,9 @@ namespace TransparentOverlay
         {
             try
             {
+                // 如果处于观光模式，跳过钓鱼逻辑
+                if (isViewMode) return;
+                
                 lock (_lockObject)
                 {
                     if (isReadytoFishing && !isFishBiting && _fishingStartTime != DateTime.MinValue)
@@ -536,6 +596,9 @@ namespace TransparentOverlay
                     {
                         await Task.Delay(100, _cancellationTokenSource.Token);
 
+                        // 如果处于观光模式，跳过钓鱼逻辑
+                        if (isViewMode) continue;
+                        
                         lock (_lockObject)
                         {
                             if (isFishBiting)
@@ -565,10 +628,14 @@ namespace TransparentOverlay
         /// <summary>
         /// 优化的碰撞检测
         /// </summary>
-        public static bool CheckCollision(FrameworkElement element1, FrameworkElement element2, double bottomExpand = 0)
+        public bool CheckCollision(FrameworkElement element1, FrameworkElement element2, double bottomExpand = 0)
         {
             try
             {
+                // 如果处于观光模式，直接返回false不进行碰撞检测
+                if (isViewMode)
+                    return false;
+                
                 if (element1 == null || element2 == null)
                     return false;
 
@@ -593,6 +660,9 @@ namespace TransparentOverlay
         //鱼上钩时的函数
         private void OnFishCaught()
         {
+            // 如果处于观光模式，跳过鱼上钩逻辑
+            if (isViewMode) return;
+            
             lock (_lockObject)  // 添加锁确保线程安全
             {
                 if (isFishBiting && isReadytoFishing)  // 双重检查
@@ -623,6 +693,9 @@ namespace TransparentOverlay
         //收杆动作函数
         private void PullHook()
         {
+            // 如果处于观光模式，跳过收杆逻辑
+            if (isViewMode) return;
+            
             lock (_lockObject)  // 添加锁确保线程安全
             {
                 if (isFishBiting)
