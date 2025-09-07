@@ -109,10 +109,10 @@
             Source="Assets/Fish/fish1.png"
             Width="85"
             Height="85"
-            Visibility="Visible"
+            Visibility="Collapsed"
             RenderTransformOrigin="0,0.5">
             <Image.RenderTransform>
-                <RotateTransform x:Name="FishRotate" Angle="90"/>
+                <RotateTransform x:Name="CollectionAndTrashRotate" Angle="90"/>
             </Image.RenderTransform>
         </Image>
 
