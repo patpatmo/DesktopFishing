@@ -35,6 +35,15 @@ namespace RandomEventManager
         S_Event
     }
 
+    /// <summary>
+    /// 图片移动方向枚举
+    /// </summary>
+    public enum MoveDirection
+    {
+        Left,
+        Right
+    }
+
     public class EventRandomizer
     {
         private const string AssetsBasePath = @"D:\Pratice\C++\FishingGame\DesktopFishing\Assets\EventGif\";
@@ -187,8 +196,8 @@ namespace RandomEventManager
         public static void YellowDuck()
         {
             Debug.WriteLine("稀有事件：黄色橡皮鸭！");
-            // 调用通用事件图片显示方法
-            ExecuteEventImage("YellowDuck.gif", 256, 256, 100, 100, 500, 300, 100);
+            // 调用通用事件图片显示方法，从右到左移动
+            ExecuteEventImage("YellowDuck.gif", 256, 256, MoveDirection.Left, 720, 720, 50);
         }
 
         private static void S_Event()
@@ -203,24 +212,38 @@ namespace RandomEventManager
         /// <param name="imageName">图片名称</param>
         /// <param name="width">图片宽度</param>
         /// <param name="height">图片高度</param>
-        /// <param name="startX">起始X坐标</param>
+        /// <param name="direction">移动方向</param>
         /// <param name="startY">起始Y坐标</param>
-        /// <param name="endX">结束X坐标</param>
         /// <param name="endY">结束Y坐标</param>
         /// <param name="speed">移动速度</param>
-        private static void ExecuteEventImage(string imageName, int width, int height, int startX, int startY, int endX, int endY, int speed)
+        private static void ExecuteEventImage(string imageName, int width, int height, MoveDirection direction, int startY, int endY, int speed)
         {
             // 获取主窗口实例
             var mainWindow = Application.Current.MainWindow as TransparentOverlay.MainWindow;
             if (mainWindow != null)
             {
+                // 自动计算屏幕宽度相关的起始和结束位置
+                double screenWidth = SystemParameters.PrimaryScreenWidth;
+                int startX, endX;
+                
+                if (direction == MoveDirection.Right)
+                {
+                    // 从左到右：起始位置在屏幕左侧之外，结束位置在屏幕右侧之外
+                    startX = -width;  // 屏幕左侧之外
+                    endX = (int)screenWidth + width;  // 屏幕右侧之外
+                }
+                else
+                {
+                    // 从右到左：起始位置在屏幕右侧之外，结束位置在屏幕左侧之外
+                    startX = (int)screenWidth + width;  // 屏幕右侧之外
+                    endX = -width;  // 屏幕左侧之外
+                }
+                
                 // 设置EventImg的图片源
                 string imagePath = System.IO.Path.Combine(AssetsBasePath, imageName);
-                // 使用pack URI来正确引用资源
-                string packUri = $"pack://application:,,,/{imagePath}";
-                var imageUri = new Uri(packUri, UriKind.Absolute);
-                WpfAnimatedGif.ImageBehavior.SetAnimatedSource(mainWindow.EventImg, imageUri);
-                Debug.WriteLine($"事件图片路径：{packUri}");
+                var bitmapImage = new BitmapImage(new Uri(imagePath));
+                WpfAnimatedGif.ImageBehavior.SetAnimatedSource(mainWindow.EventImg, bitmapImage);
+                Debug.WriteLine($"事件图片路径：{imagePath}");
                 // 显示EventImg
                 mainWindow.EventImg.Visibility = System.Windows.Visibility.Visible;
                 

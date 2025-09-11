@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -913,7 +913,6 @@ namespace TransparentOverlay
             public int x;
             public int y;
         }
-        
         /// <summary>
         /// 控制EventImg图片移动的方法
         /// </summary>
@@ -959,14 +958,39 @@ namespace TransparentOverlay
                 // 移除EasingFunction以实现匀速运动
             };
             
+            // 添加上下颠簸效果
+            // 创建一个正弦波动画来模拟海上的颠簸
+            double bobbingAmplitude = 5; // 颠簸幅度（像素）
+            double bobbingFrequency = 0.5; // 颠簸频率（Hz）
+            
+            // 创建一个变换来应用颠簸效果
+            var translateTransform = new TranslateTransform();
+            EventImg.RenderTransform = translateTransform;
+            
+            // 使用Timer来实现自定义的颠簸效果
+            var timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromMilliseconds(16); // 约60 FPS
+            double startTime = DateTime.Now.Ticks / 10000000.0; // 转换为秒
+            
+            timer.Tick += (sender, e) =>
+            {
+                double elapsed = (DateTime.Now.Ticks / 10000000.0) - startTime;
+                double bobbingOffset = bobbingAmplitude * Math.Sin(2 * Math.PI * bobbingFrequency * elapsed);
+                translateTransform.Y = bobbingOffset;
+            };
+            
+            timer.Start();
+            
             // 设置动画完成事件
             animationX.Completed += (s, e) =>
             {
                 // 动画完成后隐藏图片
                 EventImg.Visibility = Visibility.Collapsed;
+                // 停止timer
+                timer.Stop();
             };
             
-            // 开始动画
+            // 开始X轴和Y轴动画
             EventImg.BeginAnimation(Canvas.LeftProperty, animationX);
             EventImg.BeginAnimation(Canvas.TopProperty, animationY);
         }
