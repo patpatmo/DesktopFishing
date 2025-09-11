@@ -123,6 +123,15 @@
                Width="200" Height="130" 
                Visibility="Collapsed"
                Panel.ZIndex="0"/>
+        <!-- 事件Gif -->
+        <Image x:Name="EventImg" 
+               gif:ImageBehavior.AnimatedSource="Assets/dada.gif" 
+               gif:ImageBehavior.AutoStart="True"
+               Stretch="Fill"
+               Width="100" Height="100" 
+               Visibility="Collapsed"
+               Panel.ZIndex="0"/>
+
         <Grid x:Name="TipsGrid"  Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

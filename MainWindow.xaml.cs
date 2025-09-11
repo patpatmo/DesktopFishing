@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -13,6 +13,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using WpfAnimatedGif;
 using RandomFish;
+using RandomEventManager;
 using System.Windows.Media.Imaging;
 
 namespace TransparentOverlay
@@ -123,8 +124,9 @@ namespace TransparentOverlay
             CompositionTarget.Rendering += UpdateFishingLine;
             _cancellationTokenSource = new CancellationTokenSource();
             StartFishingLogic();
-            fishGenerator= new FishGenerator();
+            fishGenerator = new FishGenerator();
             FishGenerator.SetFolderIcon();
+            RandomEventManager.EventRandomizer.YellowDuck();
         }
 
         /// <summary>
@@ -424,13 +426,13 @@ namespace TransparentOverlay
                 // 检测是否显示鱼
                 IsFishCanShow();
                 // 将鱼图像放置在鱼钩位置
-                Canvas.SetLeft(FishImage, _lineEndPosition.X - FishImage.Width / 2 +44);
+                Canvas.SetLeft(FishImage, _lineEndPosition.X - FishImage.Width / 2 + 44);
                 Canvas.SetTop(FishImage, _lineEndPosition.Y - FishImage.Height / 2);
 
-                Canvas.SetLeft(RareFishImage, _lineEndPosition.X - RareFishImage.Width / 2 +83);
-                Canvas.SetTop(RareFishImage, _lineEndPosition.Y - RareFishImage.Height / 2 -15);
+                Canvas.SetLeft(RareFishImage, _lineEndPosition.X - RareFishImage.Width / 2 + 83);
+                Canvas.SetTop(RareFishImage, _lineEndPosition.Y - RareFishImage.Height / 2 - 15);
 
-                Canvas.SetLeft(TipsGrid, _lineEndPosition.X - FishImage.Width / 2-100);
+                Canvas.SetLeft(TipsGrid, _lineEndPosition.X - FishImage.Width / 2 - 100);
                 Canvas.SetTop(TipsGrid, _lineEndPosition.Y - FishImage.Height / 2);
 
             }
@@ -485,7 +487,7 @@ namespace TransparentOverlay
             {
                 // 如果处于观光模式，跳过碰撞检测
                 if (isViewMode) return;
-                
+
                 lock (_lockObject)
                 {
                     bool wasInWater = isReadytoFishing;
@@ -804,10 +806,10 @@ namespace TransparentOverlay
             if (isFishGet)
             {
                 FishInfo fishInfo;
-                if(!_isFishRamdomed)
+                if (!_isFishRamdomed)
                 {
                     _isFishRamdomed = true;
-                    fishInfo=fishGenerator.GenerateRandomItemWithImage();//随机选取钓上的鱼的图片
+                    fishInfo = fishGenerator.GenerateRandomItemWithImage();//随机选取钓上的鱼的图片
                     // 根据ItemType执行不同方法
                     switch (fishInfo.type)
                     {
@@ -896,7 +898,6 @@ namespace TransparentOverlay
                 base.OnClosed(e);
             }
         }
-
         // 数据结构
         private struct MSLLHOOKSTRUCT
         {
@@ -911,6 +912,63 @@ namespace TransparentOverlay
         {
             public int x;
             public int y;
+        }
+        
+        /// <summary>
+        /// 控制EventImg图片移动的方法
+        /// </summary>
+        /// <param name="Width">图片宽度</param>
+        /// <param name="Height">图片高度</param>
+        /// <param name="startX">起始X坐标</param>
+        /// <param name="startY">起始Y坐标</param>
+        /// <param name="endX">结束X坐标</param>
+        /// <param name="endY">结束Y坐标</param>
+        /// <param name="speed">移动速度（像素/秒）</param>
+        public void MoveEventImage(int Width, int Height, double startX, double startY, double endX, double endY, double speed)
+        {
+            // 设置图片大小
+            EventImg.Width = Width;
+            EventImg.Height = Height;
+            
+            // 设置起始位置
+            Canvas.SetLeft(EventImg, startX);
+            Canvas.SetTop(EventImg, startY);
+            
+            // 计算移动距离和所需时间
+            double distanceX = Math.Abs(endX - startX);
+            double distanceY = Math.Abs(endY - startY);
+            // 使用较大的距离计算时间，确保动画同步
+            double maxDistance = Math.Max(distanceX, distanceY);
+            double duration = maxDistance / speed;
+            
+            // 创建X轴动画
+            var animationX = new DoubleAnimation
+            {
+                From = startX,
+                To = endX,
+                Duration = TimeSpan.FromSeconds(duration)
+                // 移除EasingFunction以实现匀速运动
+            };
+            
+            // 创建Y轴动画
+            var animationY = new DoubleAnimation
+            {
+                From = startY,
+                To = endY,
+                Duration = TimeSpan.FromSeconds(duration)
+                // 移除EasingFunction以实现匀速运动
+            };
+            
+            // 设置动画完成事件
+            animationX.Completed += (s, e) =>
+            {
+                // 动画完成后隐藏图片
+                EventImg.Visibility = Visibility.Collapsed;
+            };
+            
+            // 开始动画
+            EventImg.BeginAnimation(Canvas.LeftProperty, animationX);
+            EventImg.BeginAnimation(Canvas.TopProperty, animationY);
         }
     }
 }

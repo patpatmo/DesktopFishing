@@ -5,8 +5,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using TransparentOverlay;
+using System.Windows.Media.Imaging;
 
-namespace RandomFish
+namespace RandomEventManager
 {
     // 事件类型枚举
     public enum Rarity
@@ -35,6 +37,7 @@ namespace RandomFish
 
     public class EventRandomizer
     {
+        private const string AssetsBasePath = @"D:\Pratice\C++\FishingGame\DesktopFishing\Assets\EventGif\";
         private static readonly Random _random = new Random();
 
         // 根据权重随机选择Rarity
@@ -181,16 +184,49 @@ namespace RandomFish
             // 在这里添加大鲸鱼喷泉事件的具体实现
         }
 
-        private static void YellowDuck()
+        public static void YellowDuck()
         {
             Debug.WriteLine("稀有事件：黄色橡皮鸭！");
-            // 在这里添加黄色橡皮鸭事件的具体实现
+            // 调用通用事件图片显示方法
+            ExecuteEventImage("YellowDuck.gif", 256, 256, 100, 100, 500, 300, 100);
         }
 
         private static void S_Event()
         {
             Debug.WriteLine("稀有事件：S级事件！");
             // 在这里添加S级事件的具体实现
+        }
+
+        /// <summary>
+        /// 通用事件图片显示方法
+        /// </summary>
+        /// <param name="imageName">图片名称</param>
+        /// <param name="width">图片宽度</param>
+        /// <param name="height">图片高度</param>
+        /// <param name="startX">起始X坐标</param>
+        /// <param name="startY">起始Y坐标</param>
+        /// <param name="endX">结束X坐标</param>
+        /// <param name="endY">结束Y坐标</param>
+        /// <param name="speed">移动速度</param>
+        private static void ExecuteEventImage(string imageName, int width, int height, int startX, int startY, int endX, int endY, int speed)
+        {
+            // 获取主窗口实例
+            var mainWindow = Application.Current.MainWindow as TransparentOverlay.MainWindow;
+            if (mainWindow != null)
+            {
+                // 设置EventImg的图片源
+                string imagePath = System.IO.Path.Combine(AssetsBasePath, imageName);
+                // 使用pack URI来正确引用资源
+                string packUri = $"pack://application:,,,/{imagePath}";
+                var imageUri = new Uri(packUri, UriKind.Absolute);
+                WpfAnimatedGif.ImageBehavior.SetAnimatedSource(mainWindow.EventImg, imageUri);
+                Debug.WriteLine($"事件图片路径：{packUri}");
+                // 显示EventImg
+                mainWindow.EventImg.Visibility = System.Windows.Visibility.Visible;
+                
+                // 调用MoveEventImage方法移动图片
+                mainWindow.MoveEventImage(width, height, startX, startY, endX, endY, speed);
+            }
         }
     }
 }
