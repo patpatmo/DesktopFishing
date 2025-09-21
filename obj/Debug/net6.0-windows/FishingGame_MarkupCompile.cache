@@ -1,18 +1,18 @@
 ﻿FishingGame
-1.0.0.0
+
 
 winexe
 C#
 .cs
-d:\Pratice\C++\FishingGame\DesktopFishing\obj\Debug\net6.0-windows\
+D:\Pratice\C++\FishingGame\DesktopFishing\obj\Debug\net6.0-windows\
 FishingGame
 none
 false
 TRACE;DEBUG;NET;NET6_0;NETCOREAPP
-d:\Pratice\C++\FishingGame\DesktopFishing\App.xaml
+D:\Pratice\C++\FishingGame\DesktopFishing\App.xaml
 11407045341
 
-8786846710
+6692793017
 195-22612481
 MainWindow.xaml;
 

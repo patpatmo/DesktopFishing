@@ -126,7 +126,10 @@ namespace TransparentOverlay
             StartFishingLogic();
             fishGenerator = new FishGenerator();
             FishGenerator.SetFolderIcon();
-            RandomEventManager.EventRandomizer.YellowDuck();
+            
+            //启动随机事件定时器
+            EventRandomizer.StartRandomEventTimer();
+            //EventRandomizer.BigWhaleFountain();
         }
 
         /// <summary>
@@ -885,6 +888,9 @@ namespace TransparentOverlay
                 if (_keyboardHookID != IntPtr.Zero)
                     UnhookWindowsHookEx(_keyboardHookID);
 
+                // 停止随机事件定时器
+                EventRandomizer.StopRandomEventTimer();
+
                 _cancellationTokenSource?.Dispose();
                 _fishingTimer = null;
                 _collisionTimer = null;
@@ -923,7 +929,8 @@ namespace TransparentOverlay
         /// <param name="endX">结束X坐标</param>
         /// <param name="endY">结束Y坐标</param>
         /// <param name="speed">移动速度（像素/秒）</param>
-        public void MoveEventImage(int Width, int Height, double startX, double startY, double endX, double endY, double speed)
+        /// <param name="enableBobbing">是否开启上下颠簸效果</param>
+        public void MoveEventImage(int Width, int Height, double startX, double startY, double endX, double endY, double speed, bool enableBobbing = true)
         {
             // 设置图片大小
             EventImg.Width = Width;
@@ -958,41 +965,100 @@ namespace TransparentOverlay
                 // 移除EasingFunction以实现匀速运动
             };
             
-            // 添加上下颠簸效果
-            // 创建一个正弦波动画来模拟海上的颠簸
-            double bobbingAmplitude = 5; // 颠簸幅度（像素）
-            double bobbingFrequency = 0.5; // 颠簸频率（Hz）
+            // 初始化颠簸效果相关变量
+            DispatcherTimer timer = null;
+            TranslateTransform translateTransform = null;
             
-            // 创建一个变换来应用颠簸效果
-            var translateTransform = new TranslateTransform();
-            EventImg.RenderTransform = translateTransform;
-            
-            // 使用Timer来实现自定义的颠簸效果
-            var timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromMilliseconds(16); // 约60 FPS
-            double startTime = DateTime.Now.Ticks / 10000000.0; // 转换为秒
-            
-            timer.Tick += (sender, e) =>
+            // 如果启用颠簸效果，则设置相关参数
+            if (enableBobbing)
             {
-                double elapsed = (DateTime.Now.Ticks / 10000000.0) - startTime;
-                double bobbingOffset = bobbingAmplitude * Math.Sin(2 * Math.PI * bobbingFrequency * elapsed);
-                translateTransform.Y = bobbingOffset;
-            };
-            
-            timer.Start();
+                // 添加上下颠簸效果
+                // 创建一个正弦波动画来模拟海上的颠簸
+                double bobbingAmplitude = 5; // 颠簸幅度（像素）
+                double bobbingFrequency = 0.5; // 颠簸频率（Hz）
+                
+                // 创建一个变换来应用颠簸效果
+                translateTransform = new TranslateTransform();
+                EventImg.RenderTransform = translateTransform;
+                
+                // 使用Timer来实现自定义的颠簸效果
+                timer = new DispatcherTimer();
+                timer.Interval = TimeSpan.FromMilliseconds(16); // 约60 FPS
+                double startTime = DateTime.Now.Ticks / 10000000.0; // 转换为秒
+                
+                timer.Tick += (sender, e) =>
+                {
+                    double elapsed = (DateTime.Now.Ticks / 10000000.0) - startTime;
+                    double bobbingOffset = bobbingAmplitude * Math.Sin(2 * Math.PI * bobbingFrequency * elapsed);
+                    translateTransform.Y = bobbingOffset;
+                };
+                
+                timer.Start();
+            }
             
             // 设置动画完成事件
             animationX.Completed += (s, e) =>
             {
                 // 动画完成后隐藏图片
                 EventImg.Visibility = Visibility.Collapsed;
-                // 停止timer
-                timer.Stop();
+                // 如果启用了颠簸效果，停止timer
+                if (enableBobbing && timer != null)
+                {
+                    timer.Stop();
+                }
             };
             
             // 开始X轴和Y轴动画
             EventImg.BeginAnimation(Canvas.LeftProperty, animationX);
             EventImg.BeginAnimation(Canvas.TopProperty, animationY);
+        }
+
+        /// <summary>
+        /// 显示EventImg图片，设置大小和位置，并在GIF播放结束后隐藏
+        /// </summary>
+        /// <param name="Width">图片宽度</param>
+        /// <param name="Height">图片高度</param>
+        /// <param name="PosX">图片X坐标</param>
+        /// <param name="PosY">图片Y坐标</param>
+        public void ShowEventImage(int Width, int Height, double PosX, double PosY)
+        {
+            // 设置图片大小
+            EventImg.Width = Width;
+            EventImg.Height = Height;
+            
+            // 设置图片位置
+            Canvas.SetLeft(EventImg, PosX);
+            Canvas.SetTop(EventImg, PosY);
+            
+            // 显示图片
+            EventImg.Visibility = Visibility.Visible;
+            
+            // 移除之前的事件处理程序（如果有的话）
+            WpfAnimatedGif.ImageBehavior.RemoveAnimationCompletedHandler(EventImg, OnAnimationCompleted);
+            
+            // 添加GIF动画完成事件处理程序
+            WpfAnimatedGif.ImageBehavior.AddAnimationCompletedHandler(EventImg, OnAnimationCompleted);
+        }
+        
+        /// <summary>
+        /// GIF动画完成事件处理程序
+        /// </summary>
+        private void OnAnimationCompleted(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // 确保事件来源是EventImg
+            if (sender is System.Windows.Controls.Image image && image == EventImg)
+            {
+                // 延迟一小段时间确保最后一帧完全显示
+                Task.Delay(100).ContinueWith(_ =>
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        EventImg.Visibility = Visibility.Collapsed;
+                        // 移除事件处理程序
+                        WpfAnimatedGif.ImageBehavior.RemoveAnimationCompletedHandler(EventImg, OnAnimationCompleted);
+                    }));
+                });
+            }
         }
     }
 }

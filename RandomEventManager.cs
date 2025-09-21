@@ -48,6 +48,12 @@ namespace RandomEventManager
     {
         private const string AssetsBasePath = @"D:\Pratice\C++\FishingGame\DesktopFishing\Assets\EventGif\";
         private static readonly Random _random = new Random();
+        
+        // 定时器用于定期触发随机事件
+        private static DispatcherTimer _randomEventTimer;
+        
+        // 布尔标志，用于避免在另一个事件未结束时触发下一个事件
+        private static bool _isEventRunning = false;
 
         // 根据权重随机选择Rarity
         public static Rarity GetRandomRarity()
@@ -55,8 +61,8 @@ namespace RandomEventManager
             // 生成0-99之间的随机数
             int randomValue = _random.Next(100);
 
-            // 90%概率返回Common，10%概率返回Rare
-            if (randomValue < 90)
+            // 97%概率返回Common，3%概率返回Rare
+            if (randomValue < 97)
             {
                 return Rarity.Common;
             }
@@ -185,19 +191,21 @@ namespace RandomEventManager
         {
             Debug.WriteLine("稀有事件：湖怪出现了！");
             // 在这里添加湖怪事件的具体实现
+            ExecuteEventImage("LakeMonster.png", 256, 256, MoveDirection.Right, 720, 720, 50, false);
         }
 
-        private static void BigWhaleFountain()
+        public static void BigWhaleFountain()
         {
             Debug.WriteLine("稀有事件：大鲸鱼喷泉！");
             // 在这里添加大鲸鱼喷泉事件的具体实现
+            ExecuteEventImage("whalegif2.gif",0,0,500,500,true);
         }
 
-        public static void YellowDuck()
+        private static void YellowDuck()
         {
             Debug.WriteLine("稀有事件：黄色橡皮鸭！");
             // 调用通用事件图片显示方法，从右到左移动
-            ExecuteEventImage("YellowDuck.gif", 256, 256, MoveDirection.Left, 720, 720, 50);
+            ExecuteEventImage("YellowDuck.gif", 256, 256, MoveDirection.Left, 720, 720, 50, false);
         }
 
         private static void S_Event()
@@ -216,7 +224,8 @@ namespace RandomEventManager
         /// <param name="startY">起始Y坐标</param>
         /// <param name="endY">结束Y坐标</param>
         /// <param name="speed">移动速度</param>
-        private static void ExecuteEventImage(string imageName, int width, int height, MoveDirection direction, int startY, int endY, int speed)
+        /// <param name="enableBobbing">是否开启上下颠簸效果</param>
+        private static void ExecuteEventImage(string imageName, int width, int height, MoveDirection direction, int startY, int endY, int speed, bool enableBobbing = true)
         {
             // 获取主窗口实例
             var mainWindow = Application.Current.MainWindow as TransparentOverlay.MainWindow;
@@ -248,7 +257,156 @@ namespace RandomEventManager
                 mainWindow.EventImg.Visibility = System.Windows.Visibility.Visible;
                 
                 // 调用MoveEventImage方法移动图片
-                mainWindow.MoveEventImage(width, height, startX, startY, endX, endY, speed);
+                mainWindow.MoveEventImage(width, height, startX, startY, endX, endY, speed, enableBobbing);
+            }
+        }
+
+        /// <summary>
+        /// 通用事件图片显示方法（重载版本）
+        /// </summary>
+        /// <param name="imageName">图片名称</param>
+        /// <param name="width">图片宽度</param>
+        /// <param name="height">图片高度</param>
+        /// <param name="PosX">图片X坐标</param>
+        /// <param name="PosY">图片Y坐标</param>
+        /// <param name="IsRescale">是否自适应屏幕宽度</param>
+        private static void ExecuteEventImage(string imageName, int width, int height, double PosX, double PosY, bool IsRescale)
+        {
+            // 获取主窗口实例
+            var mainWindow = Application.Current.MainWindow as TransparentOverlay.MainWindow;
+            if (mainWindow != null)
+            {
+                // 设置EventImg的图片源
+                string imagePath = System.IO.Path.Combine(AssetsBasePath, imageName);
+                
+                // 创建BitmapImage以获取图片原始尺寸
+                var bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.UriSource = new Uri(imagePath);
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad; // 确保能获取到像素尺寸
+                bitmapImage.EndInit();
+                
+                WpfAnimatedGif.ImageBehavior.SetAnimatedSource(mainWindow.EventImg, bitmapImage);
+                Debug.WriteLine($"事件图片路径：{imagePath}");
+                
+                // 计算最终显示尺寸
+                int finalWidth = width;
+                int finalHeight = height;
+                
+                if (IsRescale)
+                {
+                    // 获取屏幕宽度
+                    double screenWidth = SystemParameters.PrimaryScreenWidth;
+                    
+                    // 计算缩放比例
+                    double scale = screenWidth / bitmapImage.PixelWidth;
+                    
+                    // 保持原图比例调整尺寸
+                    finalWidth = (int)screenWidth;
+                    finalHeight = (int)(bitmapImage.PixelHeight * scale);
+                }
+                
+                // 调用ShowEventImage方法显示图片
+                mainWindow.ShowEventImage(finalWidth, finalHeight, PosX, PosY);
+            }
+        }
+        
+        /// <summary>
+        /// 启动随机事件定时器，按随机时间（20-51秒）触发ExecuteRandomEvent方法
+        /// </summary>
+        public static void StartRandomEventTimer()
+        {
+            // 停止已存在的定时器
+            StopRandomEventTimer();
+            
+            // 创建新的定时器
+            _randomEventTimer = new DispatcherTimer();
+            
+            // 设置随机间隔时间（20-51秒）
+            int randomInterval = _random.Next(20, 51);
+            _randomEventTimer.Interval = TimeSpan.FromSeconds(randomInterval);
+            
+            _randomEventTimer.Tick += RandomEventTimer_Tick;
+            _randomEventTimer.Start();
+            
+            Debug.WriteLine($"随机事件定时器已启动，将在 {randomInterval} 秒后触发事件");
+        }
+        
+        /// <summary>
+        /// 停止随机事件定时器
+        /// </summary>
+        public static void StopRandomEventTimer()
+        {
+            if (_randomEventTimer != null)
+            {
+                _randomEventTimer.Stop();
+                _randomEventTimer = null;
+                Debug.WriteLine("随机事件定时器已停止");
+            }
+        }
+        
+        /// <summary>
+        /// 定时器事件处理方法
+        /// </summary>
+        private static void RandomEventTimer_Tick(object sender, EventArgs e)
+        {
+            // 检查是否已有事件在运行
+            if (_isEventRunning)
+            {
+                Debug.WriteLine("事件已在运行，跳过本次触发");
+                
+                // 重新设置定时器，继续等待
+                if (_randomEventTimer != null)
+                {
+                    int randomInterval = _random.Next(20, 51);
+                    _randomEventTimer.Interval = TimeSpan.FromSeconds(randomInterval);
+                    Debug.WriteLine($"已重新设置定时器，将在 {randomInterval} 秒后再次尝试触发事件");
+                }
+                
+                return;
+            }
+            
+            // 标记事件开始运行
+            _isEventRunning = true;
+            
+            try
+            {
+                // 执行随机事件
+                ExecuteRandomEvent();
+                Debug.WriteLine("定时随机事件已触发");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"触发随机事件时出错: {ex.Message}");
+            }
+            finally
+            {
+                // 标记事件结束运行
+                _isEventRunning = false;
+                
+                // 重新设置定时器，继续下一次随机事件
+                if (_randomEventTimer != null)
+                {
+                    int randomInterval = _random.Next(20, 51);
+                    _randomEventTimer.Interval = TimeSpan.FromSeconds(randomInterval);
+                    Debug.WriteLine($"已重新设置定时器，将在 {randomInterval} 秒后触发下一次事件");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 立即触发一个随机事件（不受_isEventRunning限制）
+        /// </summary>
+        public static void TriggerRandomEventImmediately()
+        {
+            try
+            {
+                ExecuteRandomEvent();
+                Debug.WriteLine("立即随机事件已触发");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"触发立即随机事件时出错: {ex.Message}");
             }
         }
     }
