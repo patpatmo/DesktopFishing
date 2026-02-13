@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Pratice\\C++\\FishingGame\\FishingGame.csproj": {}
+    "D:\\Pratice\\C++\\FishingGame\\DesktopFishing\\FishingGame.csproj": {}
   },
   "projects": {
-    "D:\\Pratice\\C++\\FishingGame\\FishingGame.csproj": {
+    "D:\\Pratice\\C++\\FishingGame\\DesktopFishing\\FishingGame.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Pratice\\C++\\FishingGame\\FishingGame.csproj",
+        "projectUniqueName": "D:\\Pratice\\C++\\FishingGame\\DesktopFishing\\FishingGame.csproj",
         "projectName": "FishingGame",
-        "projectPath": "D:\\Pratice\\C++\\FishingGame\\FishingGame.csproj",
+        "projectPath": "D:\\Pratice\\C++\\FishingGame\\DesktopFishing\\FishingGame.csproj",
         "packagesPath": "C:\\Users\\patpa\\.nuget\\packages\\",
-        "outputPath": "D:\\Pratice\\C++\\FishingGame\\obj\\",
+        "outputPath": "D:\\Pratice\\C++\\FishingGame\\DesktopFishing\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\patpa\\AppData\\Roaming\\NuGet\\NuGet.Config",

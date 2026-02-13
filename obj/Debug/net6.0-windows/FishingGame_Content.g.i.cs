@@ -8,6 +8,23 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/2.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/collectible/fish4.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fishingrod.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fishs/fish1.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fishs/fish2.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fishs/fish3.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fishs/fish4.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fish/fish4.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fish_hook.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fish_hook2.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/garbage/fish4.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/plus.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/plusreal.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/rarefish/fish4.png")]
 [assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/animation.gif")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/dada.gif")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/fishimage.gif")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("assets/water_splash.gif")]
 
 

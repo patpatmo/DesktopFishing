@@ -12,6 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using WpfAnimatedGif;
+using RandomFish;
+using RandomEventManager;
+using System.Windows.Media.Imaging;
 
 namespace TransparentOverlay
 {
@@ -86,9 +89,13 @@ namespace TransparentOverlay
         private DateTime _prevMouseTime = DateTime.Now;
         private double _verticalSpeed;
         private DateTime _lastPullTime = DateTime.MinValue; // 防止多次触发
+        private FishGenerator fishGenerator;
 
         // 钓鱼 鱼显示相关
-
+        private bool _isHideFishTimerCalled = false; // 类级别变量
+        private bool _isFishRamdomed = false;
+        // 观赏模式
+        private bool isViewMode = false;
         // 性能优化相关
         private DispatcherTimer _fishingTimer;
         private DispatcherTimer _collisionTimer;
@@ -117,6 +124,12 @@ namespace TransparentOverlay
             CompositionTarget.Rendering += UpdateFishingLine;
             _cancellationTokenSource = new CancellationTokenSource();
             StartFishingLogic();
+            fishGenerator = new FishGenerator();
+            FishGenerator.SetFolderIcon();
+            
+            //启动随机事件定时器
+            EventRandomizer.StartRandomEventTimer();
+            //EventRandomizer.BigWhaleFountain();
         }
 
         /// <summary>
@@ -199,6 +212,9 @@ namespace TransparentOverlay
 
                     var hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
                     var mousePos = new Point(hookStruct.pt.x, hookStruct.pt.y);
+
+                    // 如果处于观光模式，跳过鱼竿位置更新
+                    if (isViewMode) return CallNextHookEx(_mouseHookID, nCode, wParam, lParam);
 
                     // ==== 新增：判断鼠标向上甩动速度 ====
                     double deltaTime = (now - _prevMouseTime).TotalSeconds;
@@ -290,6 +306,40 @@ namespace TransparentOverlay
                                 }
                             }), DispatcherPriority.Background);
                         }
+                        else if (key == Key.F2)
+                        {
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                try
+                                {
+                                    // F2键切换观光模式
+                                    isViewMode = !isViewMode;
+
+                                    if (isViewMode)
+                                    {
+                                        // 进入观光模式
+                                        MainCanvas.Visibility = Visibility.Visible;
+                                        FishingRodImage.Visibility = Visibility.Collapsed;
+                                        FishingLine.Visibility = Visibility.Collapsed;
+                                        LineEnd.Visibility = Visibility.Collapsed;
+                                        DisableClickThrough();
+                                    }
+                                    else
+                                    {
+                                        // 退出观光模式
+                                        MainCanvas.Visibility = Visibility.Visible;
+                                        FishingRodImage.Visibility = Visibility.Visible;
+                                        FishingLine.Visibility = Visibility.Visible;
+                                        LineEnd.Visibility = Visibility.Visible;
+                                        DisableClickThrough();
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"F2键处理错误: {ex.Message}");
+                                }
+                            }), DispatcherPriority.Background);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -328,6 +378,9 @@ namespace TransparentOverlay
         {
             try
             {
+                // 如果处于观光模式，跳过鱼线更新
+                if (isViewMode) return;
+
                 // 始终获取鱼竿的实际位置，确保鱼线起点正确
                 Point rodPos = FishingRodImage.TransformToVisual(MainCanvas)
                                              .Transform(new Point(20, 28));
@@ -376,11 +429,14 @@ namespace TransparentOverlay
                 // 检测是否显示鱼
                 IsFishCanShow();
                 // 将鱼图像放置在鱼钩位置
-                Canvas.SetLeft(FishImage, _lineEndPosition.X - FishImage.Width / 2);
+                Canvas.SetLeft(FishImage, _lineEndPosition.X - FishImage.Width / 2 + 44);
                 Canvas.SetTop(FishImage, _lineEndPosition.Y - FishImage.Height / 2);
 
-                Canvas.SetLeft(TipsGrid, _lineEndPosition.X - FishImage.Width / 2-200);
-                Canvas.SetTop(TipsGrid, _lineEndPosition.Y - FishImage.Height / 2-100);
+                Canvas.SetLeft(RareFishImage, _lineEndPosition.X - RareFishImage.Width / 2 + 83);
+                Canvas.SetTop(RareFishImage, _lineEndPosition.Y - RareFishImage.Height / 2 - 15);
+
+                Canvas.SetLeft(TipsGrid, _lineEndPosition.X - FishImage.Width / 2 - 100);
+                Canvas.SetTop(TipsGrid, _lineEndPosition.Y - FishImage.Height / 2);
 
             }
             catch (Exception ex)
@@ -396,6 +452,17 @@ namespace TransparentOverlay
         {
             try
             {
+                // 如果处于观光模式，隐藏LineEnd并跳过更新
+                if (isViewMode)
+                {
+                    LineEnd.Visibility = Visibility.Collapsed;
+                    return;
+                }
+                else
+                {
+                    LineEnd.Visibility = Visibility.Visible;
+                }
+
                 Canvas.SetLeft(LineEnd, _lineEndPosition.X - LineEnd.Width / 2 - 1);
                 Canvas.SetTop(LineEnd, _lineEndPosition.Y - LineEnd.Height / 2 + 9);
 
@@ -421,6 +488,9 @@ namespace TransparentOverlay
         {
             try
             {
+                // 如果处于观光模式，跳过碰撞检测
+                if (isViewMode) return;
+
                 lock (_lockObject)
                 {
                     bool wasInWater = isReadytoFishing;
@@ -470,6 +540,9 @@ namespace TransparentOverlay
         {
             try
             {
+                // 如果处于观光模式，跳过钓鱼逻辑
+                if (isViewMode) return;
+
                 lock (_lockObject)
                 {
                     if (isReadytoFishing && !isFishBiting && _fishingStartTime != DateTime.MinValue)
@@ -536,6 +609,9 @@ namespace TransparentOverlay
                     {
                         await Task.Delay(100, _cancellationTokenSource.Token);
 
+                        // 如果处于观光模式，跳过钓鱼逻辑
+                        if (isViewMode) continue;
+
                         lock (_lockObject)
                         {
                             if (isFishBiting)
@@ -565,10 +641,14 @@ namespace TransparentOverlay
         /// <summary>
         /// 优化的碰撞检测
         /// </summary>
-        public static bool CheckCollision(FrameworkElement element1, FrameworkElement element2, double bottomExpand = 0)
+        public bool CheckCollision(FrameworkElement element1, FrameworkElement element2, double bottomExpand = 0)
         {
             try
             {
+                // 如果处于观光模式，直接返回false不进行碰撞检测
+                if (isViewMode)
+                    return false;
+
                 if (element1 == null || element2 == null)
                     return false;
 
@@ -593,6 +673,9 @@ namespace TransparentOverlay
         //鱼上钩时的函数
         private void OnFishCaught()
         {
+            // 如果处于观光模式，跳过鱼上钩逻辑
+            if (isViewMode) return;
+
             lock (_lockObject)  // 添加锁确保线程安全
             {
                 if (isFishBiting && isReadytoFishing)  // 双重检查
@@ -623,6 +706,8 @@ namespace TransparentOverlay
         //收杆动作函数
         private void PullHook()
         {
+            // 如果处于观光模式，跳过收杆逻辑
+            if (isViewMode) return;
             lock (_lockObject)  // 添加锁确保线程安全
             {
                 if (isFishBiting)
@@ -718,15 +803,49 @@ namespace TransparentOverlay
                 Debug.WriteLine($"显示水花异常: {ex.Message}");
             }
         }
-        private bool _isHideFishTimerCalled = false; // 类级别变量
 
         private void IsFishCanShow()
         {
             if (isFishGet)
             {
-                FishImage.Visibility = Visibility.Visible;
-                //double fishAngle = Math.Sin(_hookSwingAngle * 2) * 15;
-                //FishRotateTransform.Angle = fishAngle;
+                FishInfo fishInfo;
+                if (!_isFishRamdomed)
+                {
+                    _isFishRamdomed = true;
+                    fishInfo = fishGenerator.GenerateRandomItemWithImage();//随机选取钓上的鱼的图片
+                    // 根据ItemType执行不同方法
+                    switch (fishInfo.type)
+                    {
+                        case ItemType.Fish:
+                            //普通鱼
+                            FishImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
+                            FishImage.Visibility = Visibility.Visible;
+                            break;
+                        case ItemType.RareFish:
+                            //珍稀鱼
+                            RareFishImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
+                            RareFishImage.Visibility = Visibility.Visible;
+                            Debug.WriteLine("是条大鱼");
+                            break;
+                        case ItemType.Garbage:
+                            CollectionAndGarbageImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
+                            CollectionAndGarbageImage.Visibility = Visibility.Visible;
+                            break;
+                        case ItemType.Collectible:
+                            CollectionAndGarbageImage.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将鱼的图片设置为鱼图片的源
+                            FishImgTips.Source = new BitmapImage(new Uri(fishInfo.imgPath));//将提示鱼的图片设置为鱼提示图片的源
+                            CollectionAndGarbageImage.Visibility = Visibility.Visible;
+                            break;
+                        default:
+                            //待定
+                            break;
+                    }
+                    FishBucketManager.AddFishToBucket(fishInfo.imgPath);
+                    Debug.WriteLine(fishInfo);
+                }
 
                 // 只在第一次进入时调用
                 if (!_isHideFishTimerCalled)
@@ -738,13 +857,14 @@ namespace TransparentOverlay
             else
             {
                 FishImage.Visibility = Visibility.Collapsed;
+                RareFishImage.Visibility = Visibility.Collapsed;
                 //FishRotateTransform.Angle = 0;
+                _isFishRamdomed = false;
                 _isHideFishTimerCalled = false; // 重置状态，允许下次调用
             }
         }
         private async void HideFishTimer()
         {
-            
             await Task.Delay(3000).ConfigureAwait(true); // 确保回到 UI 线程
             isFishGet = false;
             FishImage.Visibility = Visibility.Collapsed;
@@ -768,6 +888,9 @@ namespace TransparentOverlay
                 if (_keyboardHookID != IntPtr.Zero)
                     UnhookWindowsHookEx(_keyboardHookID);
 
+                // 停止随机事件定时器
+                EventRandomizer.StopRandomEventTimer();
+
                 _cancellationTokenSource?.Dispose();
                 _fishingTimer = null;
                 _collisionTimer = null;
@@ -781,7 +904,6 @@ namespace TransparentOverlay
                 base.OnClosed(e);
             }
         }
-
         // 数据结构
         private struct MSLLHOOKSTRUCT
         {
@@ -796,6 +918,147 @@ namespace TransparentOverlay
         {
             public int x;
             public int y;
+        }
+        /// <summary>
+        /// 控制EventImg图片移动的方法
+        /// </summary>
+        /// <param name="Width">图片宽度</param>
+        /// <param name="Height">图片高度</param>
+        /// <param name="startX">起始X坐标</param>
+        /// <param name="startY">起始Y坐标</param>
+        /// <param name="endX">结束X坐标</param>
+        /// <param name="endY">结束Y坐标</param>
+        /// <param name="speed">移动速度（像素/秒）</param>
+        /// <param name="enableBobbing">是否开启上下颠簸效果</param>
+        public void MoveEventImage(int Width, int Height, double startX, double startY, double endX, double endY, double speed, bool enableBobbing = true)
+        {
+            // 设置图片大小
+            EventImg.Width = Width;
+            EventImg.Height = Height;
+            
+            // 设置起始位置
+            Canvas.SetLeft(EventImg, startX);
+            Canvas.SetTop(EventImg, startY);
+            
+            // 计算移动距离和所需时间
+            double distanceX = Math.Abs(endX - startX);
+            double distanceY = Math.Abs(endY - startY);
+            // 使用较大的距离计算时间，确保动画同步
+            double maxDistance = Math.Max(distanceX, distanceY);
+            double duration = maxDistance / speed;
+            
+            // 创建X轴动画
+            var animationX = new DoubleAnimation
+            {
+                From = startX,
+                To = endX,
+                Duration = TimeSpan.FromSeconds(duration)
+                // 移除EasingFunction以实现匀速运动
+            };
+            
+            // 创建Y轴动画
+            var animationY = new DoubleAnimation
+            {
+                From = startY,
+                To = endY,
+                Duration = TimeSpan.FromSeconds(duration)
+                // 移除EasingFunction以实现匀速运动
+            };
+            
+            // 初始化颠簸效果相关变量
+            DispatcherTimer timer = null;
+            TranslateTransform translateTransform = null;
+            
+            // 如果启用颠簸效果，则设置相关参数
+            if (enableBobbing)
+            {
+                // 添加上下颠簸效果
+                // 创建一个正弦波动画来模拟海上的颠簸
+                double bobbingAmplitude = 5; // 颠簸幅度（像素）
+                double bobbingFrequency = 0.5; // 颠簸频率（Hz）
+                
+                // 创建一个变换来应用颠簸效果
+                translateTransform = new TranslateTransform();
+                EventImg.RenderTransform = translateTransform;
+                
+                // 使用Timer来实现自定义的颠簸效果
+                timer = new DispatcherTimer();
+                timer.Interval = TimeSpan.FromMilliseconds(16); // 约60 FPS
+                double startTime = DateTime.Now.Ticks / 10000000.0; // 转换为秒
+                
+                timer.Tick += (sender, e) =>
+                {
+                    double elapsed = (DateTime.Now.Ticks / 10000000.0) - startTime;
+                    double bobbingOffset = bobbingAmplitude * Math.Sin(2 * Math.PI * bobbingFrequency * elapsed);
+                    translateTransform.Y = bobbingOffset;
+                };
+                
+                timer.Start();
+            }
+            
+            // 设置动画完成事件
+            animationX.Completed += (s, e) =>
+            {
+                // 动画完成后隐藏图片
+                EventImg.Visibility = Visibility.Collapsed;
+                // 如果启用了颠簸效果，停止timer
+                if (enableBobbing && timer != null)
+                {
+                    timer.Stop();
+                }
+            };
+            
+            // 开始X轴和Y轴动画
+            EventImg.BeginAnimation(Canvas.LeftProperty, animationX);
+            EventImg.BeginAnimation(Canvas.TopProperty, animationY);
+        }
+
+        /// <summary>
+        /// 显示EventImg图片，设置大小和位置，并在GIF播放结束后隐藏
+        /// </summary>
+        /// <param name="Width">图片宽度</param>
+        /// <param name="Height">图片高度</param>
+        /// <param name="PosX">图片X坐标</param>
+        /// <param name="PosY">图片Y坐标</param>
+        public void ShowEventImage(int Width, int Height, double PosX, double PosY)
+        {
+            // 设置图片大小
+            EventImg.Width = Width;
+            EventImg.Height = Height;
+            
+            // 设置图片位置
+            Canvas.SetLeft(EventImg, PosX);
+            Canvas.SetTop(EventImg, PosY);
+            
+            // 显示图片
+            EventImg.Visibility = Visibility.Visible;
+            
+            // 移除之前的事件处理程序（如果有的话）
+            WpfAnimatedGif.ImageBehavior.RemoveAnimationCompletedHandler(EventImg, OnAnimationCompleted);
+            
+            // 添加GIF动画完成事件处理程序
+            WpfAnimatedGif.ImageBehavior.AddAnimationCompletedHandler(EventImg, OnAnimationCompleted);
+        }
+        
+        /// <summary>
+        /// GIF动画完成事件处理程序
+        /// </summary>
+        private void OnAnimationCompleted(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // 确保事件来源是EventImg
+            if (sender is System.Windows.Controls.Image image && image == EventImg)
+            {
+                // 延迟一小段时间确保最后一帧完全显示
+                Task.Delay(100).ContinueWith(_ =>
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        EventImg.Visibility = Visibility.Collapsed;
+                        // 移除事件处理程序
+                        WpfAnimatedGif.ImageBehavior.RemoveAnimationCompletedHandler(EventImg, OnAnimationCompleted);
+                    }));
+                });
+            }
         }
     }
 }
